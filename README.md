@@ -1,7 +1,7 @@
 ---
 # MansiR Project
 
-*MansiR* is a social-environmental initiative that aims to reduce food waste by connecting individuals who want to **give** and **collect** food. This repository houses both the **backend** (Node.js + TypeScript + MySQL) and the **frontend** (React + TypeScript + Redux) portions of the application.
+*MansiR* is a social-environmental initiative that aims to reduce food waste by connecting individuals who want to *give* and *collect* food. This repository houses both the *backend* (Node.js + TypeScript + MySQL) and the *frontend* (React + TypeScript + Redux) portions of the application.
 
 ---
 
