@@ -22,6 +22,7 @@ import TalkToUs from "./screens/TalkToUs";
 import GiveFood from "./screens/GiveFood";
 import CollectFood from "./screens/CollectFood";
 import UnderConstruction from "./screens/UnderConstruction";
+import GiverMealMapScreen from "./screens/GiverMealMapScreen";
 
 /**
  * App sets up the main router and routes for the application.
@@ -51,6 +52,7 @@ const App: React.FC = () => {
         <Route path="/settings" element={<Settings />} />
         <Route path="/talk-to-us" element={<TalkToUs />} />
         <Route path="/give-food" element={<GiveFood />} />
+        <Route path="/giver-meal-map" element={<GiverMealMapScreen />} />
         <Route path="/collect-food" element={<CollectFood />} />
         <Route path="/under-construction" element={<UnderConstruction />} />
       </Routes>

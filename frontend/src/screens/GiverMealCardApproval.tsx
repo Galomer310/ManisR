@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-// Import the FoodItem type from our global types
 import { FoodItem } from "../types";
 
 /**
@@ -11,26 +10,35 @@ import { FoodItem } from "../types";
 const GiverMealCardApproval: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // Extract foodItemId from router state
+
+  // Extract the foodItemId from router state
   const stateFoodItemId = (location.state as { foodItemId: number })
     ?.foodItemId;
+
+  // Keep track of the fetched meal or any error
   const [foodItem, setFoodItem] = useState<FoodItem | null>(null);
   const [error, setError] = useState("");
+
+  // Use your environment variable or fallback to localhost:3000
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
   useEffect(() => {
     if (!stateFoodItemId) {
       setError("No food item ID provided. Please go back and upload again.");
       return;
     }
+
+    // Fetch the meal details from the backend
     const fetchFoodItem = async () => {
       try {
-        const API_BASE_URL =
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
         const res = await fetch(`${API_BASE_URL}/food/${stateFoodItemId}`);
         if (!res.ok) {
+          // If server returns an error, parse it
           const data = await res.json();
           setError(data.error || "Error fetching food item");
         } else {
+          // Otherwise parse JSON to get the meal
           const json = await res.json();
           setFoodItem(json.foodItem);
         }
@@ -39,28 +47,50 @@ const GiverMealCardApproval: React.FC = () => {
         setError("Server error retrieving food item");
       }
     };
+
     fetchFoodItem();
-  }, [stateFoodItemId]);
+  }, [stateFoodItemId, API_BASE_URL]);
 
+  // Approve button (placeholder behavior)
   const handleApprove = () => {
-    // Optionally, update the record as approved in the backend.
-    navigate("/home");
+    if (foodItem) {
+      navigate("/giver-meal-map", { state: { foodItemId: foodItem.id } });
+    } else {
+      setError("Food item data is missing.");
+    }
   };
 
-  const handleBack = () => {
-    // Navigate back to the upload screen for editing.
-    navigate("/give-food", { state: { foodItemId: stateFoodItemId } });
+  // Cancel meal button (delete the meal from DB)
+  const handleCancelMeal = async () => {
+    if (!stateFoodItemId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/food/${stateFoodItemId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Failed to cancel meal");
+        return;
+      }
+      // If successful, navigate away or reset state
+      navigate("/give-food");
+    } catch (err) {
+      console.error(err);
+      setError("Server error cancelling meal");
+    }
   };
 
+  // If we have an error message, show it with a Back button
   if (error) {
     return (
       <div className="screen-container">
         <p style={{ color: "red" }}>{error}</p>
-        <button onClick={handleBack}>Back</button>
+        <button onClick={() => navigate("/give-food")}>Back</button>
       </div>
     );
   }
 
+  // If we have no error but haven't fetched the meal yet, show loading
   if (!foodItem) {
     return (
       <div className="screen-container">
@@ -69,6 +99,7 @@ const GiverMealCardApproval: React.FC = () => {
     );
   }
 
+  // Otherwise, render the meal card
   return (
     <div className="screen-container">
       <h2>Meal Card Approval</h2>
@@ -117,7 +148,8 @@ const GiverMealCardApproval: React.FC = () => {
       <p>Are all the details correct?</p>
       <div style={{ display: "flex", gap: "16px" }}>
         <button onClick={handleApprove}>Approve</button>
-        <button onClick={handleBack}>Back</button>
+        <button onClick={handleCancelMeal}>Cancel Meal</button>
+        <button onClick={() => navigate("/give-food")}>Back</button>
       </div>
     </div>
   );

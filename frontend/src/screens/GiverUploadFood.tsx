@@ -83,6 +83,12 @@ const GiverUploadFood: React.FC = () => {
     }
   };
 
+  // 1) Add a handler for “Cancel”
+  const handleCancel = () => {
+    // 2) Just navigate back to home
+    navigate("/home");
+  };
+
   return (
     <div className="screen-container">
       <h2>Giver Upload Food</h2>
@@ -261,6 +267,9 @@ const GiverUploadFood: React.FC = () => {
           />
         </div>
         <button type="submit">Approve</button>
+        <button type="button" onClick={handleCancel}>
+          Cancel
+        </button>
       </form>
       {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
