@@ -57,7 +57,7 @@ const getPreferences = async (req, res) => {
             return res.status(200).json({ preferences: rows[0] });
         }
         else {
-            return res.status(404).json({ error: "No preferences found" });
+            return res.status(200).json({ preferences: null });
         }
     }
     catch (err) {
