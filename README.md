@@ -1,4 +1,3 @@
-Below is a sample **README.md** you can place at the root of your project’s GitHub repository. It includes a basic overview, instructions on setup (both backend and frontend), environment variables, and mentions your main features (phone-code login, JWT, preferences, etc.). Feel free to tailor it to your specific needs!
 
 ---
 
