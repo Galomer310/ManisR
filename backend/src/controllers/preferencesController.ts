@@ -1,7 +1,14 @@
 // backend/src/controllers/preferencesController.ts
+
 import { Request, Response } from "express";
 import pool from "../config/database";
+// Import the Preferences type from our types file
+import { UserPreferences } from "../types";
 
+/**
+ * savePreferences - Saves or updates a user's preferences.
+ * Expects a JSON body: { userId, city, radius, foodPreference, allergies }
+ */
 export const savePreferences = async (req: Request, res: Response) => {
   try {
     const { userId, city, radius, foodPreference, allergies } = req.body;
@@ -37,6 +44,10 @@ export const savePreferences = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * getPreferences - Retrieves preferences for a given user.
+ * Expects a URL parameter: userId
+ */
 export const getPreferences = async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId;
@@ -49,7 +60,7 @@ export const getPreferences = async (req: Request, res: Response) => {
     if (Array.isArray(rows) && rows.length > 0) {
       return res.status(200).json({ preferences: rows[0] });
     } else {
-      return res.status(404).json({ error: "No preferences found" });
+      return res.status(200).json({ preferences: null });
     }
   } catch (err) {
     console.error("Get preferences error:", err);

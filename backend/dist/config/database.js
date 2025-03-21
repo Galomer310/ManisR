@@ -1,4 +1,5 @@
 "use strict";
+// backend/src/config/database.ts
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -33,10 +34,11 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-// backend/src/config/database.ts
 const mysql2_1 = require("mysql2");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config({ path: "../.env" });
+// Create a connection pool for MySQL.
+// Adjust connectionLimit as needed.
 const pool = (0, mysql2_1.createPool)({
     host: process.env.DB_HOST || "localhost",
     user: process.env.DB_USER,
@@ -44,5 +46,5 @@ const pool = (0, mysql2_1.createPool)({
     database: process.env.DB_NAME,
     connectionLimit: 10,
 });
-// We won't do a test connection here, but you can if you want
+// Export the pool to be used in queries.
 exports.default = pool;

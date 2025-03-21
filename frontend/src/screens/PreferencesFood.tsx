@@ -1,62 +1,40 @@
-// frontend/src/screens/PreferencesFood.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setFoodPreferences } from "../store/slices/preferencesSlice";
+import { FoodPreferences } from "../types";
 
+/**
+ * PreferencesFood allows the user to select their food preference and allergies.
+ * The selections are dispatched to Redux and then the user is navigated to Home.
+ */
 const PreferencesFood: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [foodPreference, setFoodPreference] = useState("No preferences");
   const [allergies, setAllergies] = useState<string[]>([]);
   const [otherAllergy, setOtherAllergy] = useState("");
-  const [error, setError] = useState("");
 
-  const handleAllergyChange = (allergy: string) => {
-    if (allergies.includes(allergy)) {
-      setAllergies(allergies.filter((item) => item !== allergy));
+  const toggleSelection = (value: string) => {
+    if (allergies.includes(value)) {
+      setAllergies(allergies.filter((a) => a !== value));
     } else {
-      setAllergies([...allergies, allergy]);
+      setAllergies([...allergies, value]);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    // Retrieve location preferences from localStorage
-    const locationData = localStorage.getItem("locationPreferences");
-    if (!locationData) {
-      setError("Location preferences not set.");
-      return;
-    }
-    const { city, radius } = JSON.parse(locationData);
     const selectedAllergies = allergies.includes("other")
       ? [...allergies.filter((a) => a !== "other"), otherAllergy]
       : allergies;
-
-    // Assume the userId is stored from login; for testing, we use "1"
-    const userId = localStorage.getItem("userId") || "1";
-    const payload = {
-      userId,
-      city,
-      radius,
+    const payload: FoodPreferences = {
       foodPreference,
-      allergies: selectedAllergies.join(","), // join into a string
+      allergies: selectedAllergies,
     };
-
-    try {
-      const res = await fetch("/preferences", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Error saving preferences");
-      } else {
-        navigate("/home");
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Server error while saving preferences");
-    }
+    dispatch(setFoodPreferences(payload));
+    // In production, you might send these preferences to the backend.
+    navigate("/home");
   };
 
   return (
@@ -116,7 +94,7 @@ const PreferencesFood: React.FC = () => {
               type="checkbox"
               value="Milk"
               checked={allergies.includes("Milk")}
-              onChange={() => handleAllergyChange("Milk")}
+              onChange={() => toggleSelection("Milk")}
             />{" "}
             Milk
           </label>
@@ -126,7 +104,7 @@ const PreferencesFood: React.FC = () => {
               type="checkbox"
               value="Gluten"
               checked={allergies.includes("Gluten")}
-              onChange={() => handleAllergyChange("Gluten")}
+              onChange={() => toggleSelection("Gluten")}
             />{" "}
             Gluten
           </label>
@@ -136,7 +114,7 @@ const PreferencesFood: React.FC = () => {
               type="checkbox"
               value="Eggs"
               checked={allergies.includes("Eggs")}
-              onChange={() => handleAllergyChange("Eggs")}
+              onChange={() => toggleSelection("Eggs")}
             />{" "}
             Eggs
           </label>
@@ -146,7 +124,7 @@ const PreferencesFood: React.FC = () => {
               type="checkbox"
               value="Peanuts"
               checked={allergies.includes("Peanuts")}
-              onChange={() => handleAllergyChange("Peanuts")}
+              onChange={() => toggleSelection("Peanuts")}
             />{" "}
             Peanuts
           </label>
@@ -156,7 +134,7 @@ const PreferencesFood: React.FC = () => {
               type="checkbox"
               value="Nuts"
               checked={allergies.includes("Nuts")}
-              onChange={() => handleAllergyChange("Nuts")}
+              onChange={() => toggleSelection("Nuts")}
             />{" "}
             Nuts
           </label>
@@ -166,7 +144,7 @@ const PreferencesFood: React.FC = () => {
               type="checkbox"
               value="other"
               checked={allergies.includes("other")}
-              onChange={() => handleAllergyChange("other")}
+              onChange={() => toggleSelection("other")}
             />{" "}
             Other
           </label>
@@ -176,7 +154,7 @@ const PreferencesFood: React.FC = () => {
               type="checkbox"
               value="No allergies"
               checked={allergies.includes("No allergies")}
-              onChange={() => handleAllergyChange("No allergies")}
+              onChange={() => toggleSelection("No allergies")}
             />{" "}
             No allergies
           </label>
@@ -193,7 +171,6 @@ const PreferencesFood: React.FC = () => {
         </div>
         <button type="submit">Approve</button>
       </form>
-      {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );
 };

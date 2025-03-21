@@ -1,16 +1,20 @@
-// frontend/src/screens/HomePage.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+/**
+ * HomePage displays the main options for a returning user,
+ * along with a dropdown menu for additional navigation.
+ */
 const HomePage: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Toggle the dropdown menu.
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
 
-  // Handlers for dropdown options
+  // Handlers for dropdown options.
   const handleProfile = () => {
     navigate("/profile");
     setMenuOpen(false);
@@ -31,7 +35,7 @@ const HomePage: React.FC = () => {
     setMenuOpen(false);
   };
 
-  // Handlers for main options
+  // Handlers for main options.
   const handleGiveFood = () => {
     navigate("/give-food");
   };

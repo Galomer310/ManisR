@@ -1,19 +1,23 @@
-// frontend/src/screens/PreferencesLocation.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setLocation } from "../store/slices/preferencesSlice";
+import { LocationPreferences } from "../types";
 
+/**
+ * PreferencesLocation collects the user's location preferences,
+ * such as city and search radius, then saves them to Redux.
+ */
 const PreferencesLocation: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [city, setCity] = useState("");
   const [radius, setRadius] = useState(5);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Save location preferences in localStorage
-    localStorage.setItem(
-      "locationPreferences",
-      JSON.stringify({ city, radius })
-    );
+    const payload: LocationPreferences = { city, radius };
+    dispatch(setLocation(payload));
     navigate("/preferences/food");
   };
 

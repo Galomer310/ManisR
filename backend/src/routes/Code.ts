@@ -1,13 +1,14 @@
 // backend/src/routes/code.ts
+
 import { Router } from "express";
 import { sendCode, verifyCode } from "../controllers/CodeController";
 
 const router = Router();
 
-// Endpoint to send the code (for both registration and login, if desired)
+// Endpoint to send a verification code
 router.post("/send-code", sendCode);
 
-// Endpoint to verify the code (for both registration and login)
+// Endpoint to verify the provided code
 router.post("/verify-code", verifyCode);
 
 export default router;

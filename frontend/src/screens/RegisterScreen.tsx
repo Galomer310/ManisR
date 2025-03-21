@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useRef, FormEvent } from "react";
+import React, { useState, useRef, useEffect, FormEvent } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useNavigate } from "react-router-dom";
 
+/**
+ * RegisterScreen is the initial registration form.
+ * It collects username, phone, and password; uses honeypot and reCAPTCHA for security.
+ * On success, it shows a modal and then navigates to the login page.
+ */
 const RegisterScreen: React.FC = () => {
   const navigate = useNavigate();
   const recaptchaRef = useRef<ReCAPTCHA>(null);
@@ -11,7 +16,6 @@ const RegisterScreen: React.FC = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showModal, setShowModal] = useState(false);
-
   const [formLoadedTime, setFormLoadedTime] = useState<number>(Date.now());
 
   useEffect(() => {
@@ -28,6 +32,7 @@ const RegisterScreen: React.FC = () => {
       return;
     }
 
+    // Access honeypot field value
     const honeypotValue = (e.currentTarget as HTMLFormElement).honeypotField
       .value;
 
@@ -70,13 +75,13 @@ const RegisterScreen: React.FC = () => {
     <div className="screen-container">
       <h2>Register</h2>
       <form onSubmit={handleSubmit} autoComplete="off">
+        {/* Honeypot input */}
         <input
           type="text"
           name="honeypotField"
           style={{ display: "none" }}
           tabIndex={-1}
         />
-
         <input
           type="text"
           placeholder="Username"

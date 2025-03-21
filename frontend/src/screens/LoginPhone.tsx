@@ -1,7 +1,9 @@
-// frontend/src/screens/LoginPhone.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+/**
+ * LoginPhone prompts the user to enter their phone number to receive a login code.
+ */
 const LoginPhone: React.FC = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState("");

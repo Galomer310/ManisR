@@ -1,62 +1,68 @@
 // backend/src/controllers/codeController.ts
 import { Request, Response } from "express";
 import { randomInt } from "crypto";
+import pool from "../config/database";
+import { User, UserRow } from "../types"; // import types from your centralized types file
 
-// In-memory store for phone codes.
-// NOTE: In production, use a persistent store (e.g., Redis) and set an expiration.
 const codeStore: { [phone: string]: { code: string; expires: number } } = {};
 
-/**
- * Endpoint to send a verification code to the user's phone.
- * Expects a JSON body with: { phone: string }
- */
 export const sendCode = (req: Request, res: Response) => {
   const { phone } = req.body;
   if (!phone) {
     return res.status(400).json({ error: "Phone number is required" });
   }
-  // Validate phone format (e.g., must start with "05" and be 10 digits)
   const phoneRegex = /^05\d{8}$/;
   if (!phoneRegex.test(phone)) {
     return res.status(400).json({ error: "Invalid phone number format" });
   }
-
-  // Generate a random 4-digit code (you can adjust the length)
-  const code = String(randomInt(1000, 10000)); // generates number between 1000 and 9999
-  // Set expiration (e.g., 5 minutes from now)
-  const expires = Date.now() + 5 * 60 * 1000;
+  const code = String(randomInt(1000, 10000));
+  const expires = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
   codeStore[phone] = { code, expires };
-
-  // Here, you would integrate an SMS API (like Twilio) to actually send the code.
   console.log(`Sending code ${code} to phone ${phone}`);
-
   return res.status(200).json({ message: "Verification code sent successfully" });
 };
 
-/**
- * Endpoint to verify the code entered by the client.
- * Expects a JSON body with: { phone: string, code: string }
- */
-export const verifyCode = (req: Request, res: Response) => {
+export const verifyCode = async (req: Request, res: Response) => {
   const { phone, code } = req.body;
   if (!phone || !code) {
     return res.status(400).json({ error: "Phone number and code are required" });
   }
-
+  console.log("Verifying code for phone:", phone, "with code:", code);
   const record = codeStore[phone];
   if (!record) {
+    console.error("No code record found for phone:", phone);
     return res.status(400).json({ error: "No code has been sent to this phone" });
   }
   if (Date.now() > record.expires) {
-    // Code expired, remove it from the store.
+    console.error("Code expired for phone:", phone);
     delete codeStore[phone];
     return res.status(400).json({ error: "The code has expired" });
   }
   if (record.code !== code) {
+    console.error("Invalid code for phone:", phone, "expected:", record.code, "got:", code);
     return res.status(400).json({ error: "The code is incorrect" });
   }
-
-  // Successful verification; remove the stored code.
   delete codeStore[phone];
-  return res.status(200).json({ message: "Phone number verified successfully" });
+
+  // Query the user from the database by phone.
+  try {
+    const [rows] = await pool
+      .promise()
+      .query<UserRow[]>("SELECT * FROM users WHERE phone = ?", [phone]);
+    if (rows.length === 0) {
+      return res.status(400).json({ error: "User not found" });
+    }
+    const user = rows[0];
+    return res.status(200).json({
+      message: "Phone number verified successfully",
+      user: {
+        id: user.id,
+        username: user.username,
+        phone: user.phone,
+      },
+    });
+  } catch (err) {
+    console.error("Error retrieving user:", err);
+    return res.status(500).json({ error: "Server error retrieving user data" });
+  }
 };

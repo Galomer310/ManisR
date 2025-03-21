@@ -1,22 +1,28 @@
-// frontend/src/screens/GiverUploadFood.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+// Import the FoodData type from our global types file.
+import { FoodData } from "../types";
 
+/**
+ * GiverUploadFood collects details for a food item being uploaded by a giver.
+ * It allows the user to enter text details, select options, and optionally upload an image.
+ * On successful submission, it sends the data (via FormData) to the backend and navigates
+ * to the Meal Card Approval page with the new food item ID.
+ */
 const GiverUploadFood: React.FC = () => {
   const navigate = useNavigate();
 
-  // Other state variables...
+  // Form state for food details.
   const [itemDescription, setItemDescription] = useState("");
   const [pickupAddress, setPickupAddress] = useState("");
-  const [boxOption, setBoxOption] = useState("need"); // "need" or "noNeed"
+  const [boxOption, setBoxOption] = useState<FoodData["boxOption"]>("need");
   const [foodTypes, setFoodTypes] = useState<string[]>([]);
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [specialNotes, setSpecialNotes] = useState("");
-
-  // New state for the image file
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [error, setError] = useState("");
 
-  // Toggle selection helper for checkboxes (same as before)
+  // Toggle checkbox selection for food types or ingredients.
   const toggleSelection = (
     value: string,
     currentSelection: string[],
@@ -29,15 +35,18 @@ const GiverUploadFood: React.FC = () => {
     }
   };
 
+  // Handle file input change.
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setImageFile(e.target.files[0]);
     }
   };
 
+  // Handle form submission: create FormData and send to backend.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Build FormData object to send text fields and the image file
+    setError("");
+
     const formData = new FormData();
     formData.append("itemDescription", itemDescription);
     formData.append("pickupAddress", pickupAddress);
@@ -45,27 +54,32 @@ const GiverUploadFood: React.FC = () => {
     formData.append("foodTypes", foodTypes.join(","));
     formData.append("ingredients", ingredients.join(","));
     formData.append("specialNotes", specialNotes);
+    // In production, include the logged-in user's ID; here we hardcode "1" for example.
+    formData.append("userId", "1");
     if (imageFile) {
       formData.append("image", imageFile);
     }
 
-    // Log the payload for debugging (note: FormData won't stringify nicely)
-    console.log("Uploading food item...");
-
     try {
-      const res = await fetch("/food/give", {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+      const res = await fetch(`${API_BASE_URL}/food/give`, {
         method: "POST",
-        // When using FormData, do not set Content-Type header manually.
         body: formData,
       });
+
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
-        console.error("Error uploading image and details:", data.error);
+        setError(data.error || "Error uploading food item");
       } else {
-        navigate("/home");
+        // Navigate to the approval page passing the food item ID via router state.
+        navigate("/giver-meal-approval", {
+          state: { foodItemId: data.foodItemId },
+        });
       }
     } catch (err) {
       console.error("Upload error:", err);
+      setError("Server error during food upload");
     }
   };
 
@@ -228,16 +242,6 @@ const GiverUploadFood: React.FC = () => {
             Nuts
           </label>
         </div>
-
-        <div>
-          <p>Special notes:</p>
-          <textarea
-            placeholder="Enter any special notes"
-            value={specialNotes}
-            onChange={(e) => setSpecialNotes(e.target.value)}
-            rows={3}
-          />
-        </div>
         <div>
           <label htmlFor="foodImage">Upload an Image (optional):</label>
           <input
@@ -247,8 +251,18 @@ const GiverUploadFood: React.FC = () => {
             onChange={handleFileChange}
           />
         </div>
+        <div>
+          <p>Special notes:</p>
+          <textarea
+            placeholder="Enter any special notes"
+            value={specialNotes}
+            onChange={(e) => setSpecialNotes(e.target.value)}
+            rows={3}
+          />
+        </div>
         <button type="submit">Approve</button>
       </form>
+      {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );
 };

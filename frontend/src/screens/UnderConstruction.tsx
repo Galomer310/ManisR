@@ -1,6 +1,8 @@
-// frontend/src/screens/UnderConstruction.tsx
 import React from "react";
 
+/**
+ * UnderConstruction screen to display when a section is unavailable.
+ */
 const UnderConstruction: React.FC = () => {
   return (
     <div className="screen-container">

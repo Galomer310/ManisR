@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+/**
+ * RegisterCode prompts the user to enter the code sent to their phone
+ * during registration.
+ */
 const RegisterCode: React.FC = () => {
   const navigate = useNavigate();
   const [phone, setPhone] = useState("");
@@ -19,6 +23,7 @@ const RegisterCode: React.FC = () => {
       if (!res.ok) {
         setError(data.error || "Code verification failed");
       } else {
+        // On successful verification, navigate to registration details.
         navigate("/register/details");
       }
     } catch (err) {

@@ -1,11 +1,11 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 // backend/src/routes/code.ts
+Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const CodeController_1 = require("../controllers/CodeController");
 const router = (0, express_1.Router)();
-// Endpoint to send the code (for both registration and login, if desired)
+// Endpoint to send a verification code
 router.post("/send-code", CodeController_1.sendCode);
-// Endpoint to verify the code (for both registration and login)
+// Endpoint to verify the provided code
 router.post("/verify-code", CodeController_1.verifyCode);
 exports.default = router;

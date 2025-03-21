@@ -1,6 +1,8 @@
-// frontend/src/screens/Messages.tsx
 import React from "react";
 
+/**
+ * Messages is a placeholder screen for showing user messages.
+ */
 const Messages: React.FC = () => (
   <div className="screen-container">
     <h2>Messages</h2>

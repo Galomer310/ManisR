@@ -1,23 +1,22 @@
+// backend/src/controllers/authController.ts
+
 import { Request, Response } from "express";
 import fetch from "node-fetch";
 import bcrypt from "bcrypt";
 import pool from "../config/database";
-import { RowDataPacket } from "mysql2/promise";
+// Import our centralized types
+import { User, UserRow } from "../types";
 
-// Extend RowDataPacket so that our UserRow type is acceptable by mysql2.
-interface UserRow extends RowDataPacket {
-  id: number;
-  username: string;
-  phone: string;
-  password: string;
-}
-
+// Use the RECAPTCHA secret from environment variables
 const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || "";
 const saltRounds = 10;
 
 /**
- * Register a new user (initial step) – similar to an "instant" registration.
- * (This might be used for immediate registration with phone verification.)
+ * registerUser
+ *  - Checks for honeypot and reCAPTCHA response.
+ *  - Validates input fields and formats.
+ *  - Verifies the phone is not already registered.
+ *  - Hashes the password and inserts the new user.
  */
 export const registerUser = async (req: Request, res: Response) => {
   try {
@@ -25,9 +24,9 @@ export const registerUser = async (req: Request, res: Response) => {
       username,
       phone,
       password,
-      honeypotField,   // hidden field for bots
-      captchaToken,    // reCAPTCHA token
-      formLoadedTime,  // timestamp for time-limit check
+      honeypotField,  // hidden field for bots
+      captchaToken,   // reCAPTCHA token
+      formLoadedTime, // client timestamp for time-limit check
     } = req.body;
 
     // Honeypot check
@@ -45,22 +44,24 @@ export const registerUser = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Captcha verification failed" });
     }
 
-    // Time-limit check (must wait at least 3000ms)
+    // Time-limit check (at least 3000ms)
     const now = Date.now();
     if (formLoadedTime && Number(formLoadedTime) && now - formLoadedTime < 3000) {
       return res.status(400).json({ error: "Form submitted too quickly" });
     }
 
-    // Validate fields
+    // Validate required fields
     if (!username || !phone || !password) {
       return res.status(400).json({ error: "Please fill all required fields" });
     }
 
+    // Validate phone format (must start with '05' and be 10 digits)
     const phoneRegex = /^05\d{8}$/;
     if (!phoneRegex.test(phone)) {
       return res.status(400).json({ error: "Invalid phone number format" });
     }
 
+    // Validate password: minimum 8 characters, at least one letter and one number
     const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
     if (!passRegex.test(password)) {
       return res.status(400).json({
@@ -68,21 +69,22 @@ export const registerUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if the phone is already registered
-    const [existingRows] = await pool.promise().query<UserRow[]>(
-      "SELECT * FROM users WHERE phone = ?",
-      [phone]
-    );
+    // Check if user already exists using the phone number
+    const [existingRows] = await pool
+      .promise()
+      .query<UserRow[]>("SELECT * FROM users WHERE phone = ?", [phone]);
     if (existingRows && existingRows.length > 0) {
       return res.status(400).json({ error: "User with this phone already exists." });
     }
 
-    // Hash password and insert the user
+    // Hash the password and insert the new user record
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    await pool.promise().query(
-      "INSERT INTO users (username, phone, password) VALUES (?, ?, ?)",
-      [username, phone, hashedPassword]
-    );
+    await pool
+      .promise()
+      .query(
+        "INSERT INTO users (username, phone, password) VALUES (?, ?, ?)",
+        [username, phone, hashedPassword]
+      );
 
     return res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
@@ -92,7 +94,10 @@ export const registerUser = async (req: Request, res: Response) => {
 };
 
 /**
- * Login user using phone and password.
+ * loginUser
+ *  - Validates login fields, reCAPTCHA, and honeypot.
+ *  - Looks up the user by phone and compares the password.
+ *  - Returns user data on success.
  */
 export const loginUser = async (req: Request, res: Response) => {
   try {
@@ -108,6 +113,7 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(200).json({ message: "Login successful" });
     }
 
+    // reCAPTCHA validation
     const recapRes = await fetch(
       `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET}&response=${captchaToken}`,
       { method: "POST" }
@@ -117,6 +123,7 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Captcha verification failed" });
     }
 
+    // Time-limit check (at least 2000ms)
     const now = Date.now();
     if (formLoadedTime && Number(formLoadedTime) && now - formLoadedTime < 2000) {
       return res.status(400).json({ error: "Form submitted too quickly" });
@@ -126,10 +133,10 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Please provide phone and password" });
     }
 
-    const [rows] = await pool.promise().query<UserRow[]>(
-      "SELECT * FROM users WHERE phone = ?",
-      [phone]
-    );
+    // Query user by phone number
+    const [rows] = await pool
+      .promise()
+      .query<UserRow[]>("SELECT * FROM users WHERE phone = ?", [phone]);
     if (!rows || rows.length === 0) {
       return res.status(400).json({ error: "Invalid phone or password" });
     }
@@ -140,12 +147,13 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid phone or password" });
     }
 
+    // Return user data on successful login
     return res.status(200).json({
       message: "Login successful",
       user: {
         id: user.id,
         username: user.username,
-        phone: user.phone
+        phone: user.phone,
       }
     });
   } catch (err) {
@@ -155,11 +163,11 @@ export const loginUser = async (req: Request, res: Response) => {
 };
 
 /**
- * Save final registration details after phone verification.
- * This endpoint collects additional fields: name, username, email, gender, and password.
- * It includes honeypot, reCAPTCHA, and time-limit checks.
+ * registerDetails
+ *  - Saves final registration details after phone verification.
+ *  - Uses honeypot and reCAPTCHA validations along with a time-limit check.
+ *  - Validates required fields and correct formats, then inserts the new user record.
  */
-// backend/src/controllers/authController.ts (registerDetails function)
 export const registerDetails = async (req: Request, res: Response) => {
   try {
     const {
@@ -190,7 +198,7 @@ export const registerDetails = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Captcha verification failed" });
     }
 
-    // Time-limit check
+    // Time-limit check (at least 3000ms)
     const now = Date.now();
     if (formLoadedTime && Number(formLoadedTime) && now - formLoadedTime < 3000) {
       return res.status(400).json({ error: "Form submitted too quickly" });
@@ -201,7 +209,7 @@ export const registerDetails = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "All fields are required." });
     }
 
-    // Validate password
+    // Validate password (minimum 8 chars, at least one letter and one digit)
     const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
     if (!passRegex.test(password)) {
       return res.status(400).json({
@@ -215,21 +223,22 @@ export const registerDetails = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid phone number format" });
     }
 
-    // Check if user already exists
-    const [existingRows] = await pool.promise().query<UserRow[]>(
-      "SELECT * FROM users WHERE phone = ?",
-      [phone]
-    );
+    // Check if user already exists (by phone)
+    const [existingRows] = await pool
+      .promise()
+      .query<UserRow[]>("SELECT * FROM users WHERE phone = ?", [phone]);
     if (existingRows && existingRows.length > 0) {
       return res.status(400).json({ error: "User with this phone already exists." });
     }
 
     // Hash password and insert user details
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    await pool.promise().query(
-      "INSERT INTO users (name, username, email, gender, phone, password) VALUES (?, ?, ?, ?, ?, ?)",
-      [name, username, email, gender, phone, hashedPassword]
-    );
+    await pool
+      .promise()
+      .query(
+        "INSERT INTO users (name, username, email, gender, phone, password) VALUES (?, ?, ?, ?, ?, ?)",
+        [name, username, email, gender, phone, hashedPassword]
+      );
 
     return res.status(201).json({ message: "Registration details saved successfully" });
   } catch (err) {
