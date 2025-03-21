@@ -1,14 +1,12 @@
 // backend/src/routes/preferences.ts
-
 import { Router } from "express";
+import { verifyJWT } from "../middlewares/authMiddleware";
 import { savePreferences, getPreferences } from "../controllers/preferencesController";
 
 const router = Router();
 
-// POST /preferences - Save or update user preferences
-router.post("/", savePreferences);
-
-// GET /preferences/:userId - Retrieve preferences for a given user
-router.get("/:userId", getPreferences);
+// Protected routes
+router.post("/", verifyJWT, savePreferences);
+router.get("/:userId", verifyJWT, getPreferences);
 
 export default router;

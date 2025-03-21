@@ -1,11 +1,11 @@
 "use strict";
-// backend/src/routes/preferences.ts
 Object.defineProperty(exports, "__esModule", { value: true });
+// backend/src/routes/preferences.ts
 const express_1 = require("express");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
 const preferencesController_1 = require("../controllers/preferencesController");
 const router = (0, express_1.Router)();
-// POST /preferences - Save or update user preferences
-router.post("/", preferencesController_1.savePreferences);
-// GET /preferences/:userId - Retrieve preferences for a given user
-router.get("/:userId", preferencesController_1.getPreferences);
+// Protected routes
+router.post("/", authMiddleware_1.verifyJWT, preferencesController_1.savePreferences);
+router.get("/:userId", authMiddleware_1.verifyJWT, preferencesController_1.getPreferences);
 exports.default = router;

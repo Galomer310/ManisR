@@ -149,7 +149,6 @@ const GiverMealCardApproval: React.FC = () => {
       <div style={{ display: "flex", gap: "16px" }}>
         <button onClick={handleApprove}>Approve</button>
         <button onClick={handleCancelMeal}>Cancel Meal</button>
-        <button onClick={() => navigate("/give-food")}>Back</button>
       </div>
     </div>
   );

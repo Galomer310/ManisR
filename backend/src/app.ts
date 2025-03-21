@@ -24,8 +24,10 @@ app.use(cors());
 
 // Mount routes for various functionalities
 app.use("/auth", authRoutes);
+
 app.use("/auth", codeRoutes);
 app.use("/auth", registerDetailsRoutes);
+
 app.use("/preferences", preferencesRoutes);
 app.use("/food", foodRoutes);
 

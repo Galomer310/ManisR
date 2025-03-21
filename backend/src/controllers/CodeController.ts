@@ -1,11 +1,17 @@
 // backend/src/controllers/codeController.ts
+
 import { Request, Response } from "express";
 import { randomInt } from "crypto";
+import jwt from "jsonwebtoken";
 import pool from "../config/database";
-import { User, UserRow } from "../types"; // import types from your centralized types file
+import { UserRow } from "../types";
 
 const codeStore: { [phone: string]: { code: string; expires: number } } = {};
 
+const JWT_SECRET: string = process.env.JWT_SECRET || "fallbackSecret";
+const JWT_EXPIRES_IN: string | number = process.env.JWT_EXPIRES_IN || "1d";
+
+// Sends a random code and stores it in-memory for 5 min
 export const sendCode = (req: Request, res: Response) => {
   const { phone } = req.body;
   if (!phone) {
@@ -22,11 +28,13 @@ export const sendCode = (req: Request, res: Response) => {
   return res.status(200).json({ message: "Verification code sent successfully" });
 };
 
+// Verifies the provided code and returns a JWT on success
 export const verifyCode = async (req: Request, res: Response) => {
   const { phone, code } = req.body;
   if (!phone || !code) {
     return res.status(400).json({ error: "Phone number and code are required" });
   }
+
   console.log("Verifying code for phone:", phone, "with code:", code);
   const record = codeStore[phone];
   if (!record) {
@@ -42,6 +50,7 @@ export const verifyCode = async (req: Request, res: Response) => {
     console.error("Invalid code for phone:", phone, "expected:", record.code, "got:", code);
     return res.status(400).json({ error: "The code is incorrect" });
   }
+  // Code is correct; remove from store
   delete codeStore[phone];
 
   // Query the user from the database by phone.
@@ -53,6 +62,21 @@ export const verifyCode = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "User not found" });
     }
     const user = rows[0];
+
+    // *** Generate a JWT ***
+    const token = jwt.sign(
+      { userId: user.id },
+      JWT_SECRET,
+      {
+        expiresIn: JWT_EXPIRES_IN as any
+      }
+    );
+    
+    
+    
+    
+
+    // Return user data + token
     return res.status(200).json({
       message: "Phone number verified successfully",
       user: {
@@ -60,6 +84,7 @@ export const verifyCode = async (req: Request, res: Response) => {
         username: user.username,
         phone: user.phone,
       },
+      token,
     });
   } catch (err) {
     console.error("Error retrieving user:", err);

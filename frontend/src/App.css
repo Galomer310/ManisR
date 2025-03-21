@@ -12,7 +12,6 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
-
 .screen-container {
   display: flex;
   flex-direction: column;
@@ -52,10 +51,10 @@ textarea {
 }
 
 button {
-  width: 100%;
-  padding: 12px;
-  margin: 12px 0;
-  background-color: #007bff;
+  width: fit-content;
+  padding: 10px;
+  margin: 20px;
+  background-color: #2c9667;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -96,6 +95,16 @@ button:hover {
   }
   .screen-container {
     padding: 24px;
+  }
+  .screen-container header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .dropdown-menu {
+    width: 80%;
   }
   button {
     font-size: 1.2rem;

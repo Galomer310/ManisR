@@ -1,12 +1,17 @@
 "use strict";
+// backend/src/controllers/codeController.ts
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifyCode = exports.sendCode = void 0;
 const crypto_1 = require("crypto");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const database_1 = __importDefault(require("../config/database"));
 const codeStore = {};
+const JWT_SECRET = process.env.JWT_SECRET || "fallbackSecret";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1d";
+// Sends a random code and stores it in-memory for 5 min
 const sendCode = (req, res) => {
     const { phone } = req.body;
     if (!phone) {
@@ -23,6 +28,7 @@ const sendCode = (req, res) => {
     return res.status(200).json({ message: "Verification code sent successfully" });
 };
 exports.sendCode = sendCode;
+// Verifies the provided code and returns a JWT on success
 const verifyCode = async (req, res) => {
     const { phone, code } = req.body;
     if (!phone || !code) {
@@ -43,6 +49,7 @@ const verifyCode = async (req, res) => {
         console.error("Invalid code for phone:", phone, "expected:", record.code, "got:", code);
         return res.status(400).json({ error: "The code is incorrect" });
     }
+    // Code is correct; remove from store
     delete codeStore[phone];
     // Query the user from the database by phone.
     try {
@@ -53,6 +60,11 @@ const verifyCode = async (req, res) => {
             return res.status(400).json({ error: "User not found" });
         }
         const user = rows[0];
+        // *** Generate a JWT ***
+        const token = jsonwebtoken_1.default.sign({ userId: user.id }, JWT_SECRET, {
+            expiresIn: JWT_EXPIRES_IN
+        });
+        // Return user data + token
         return res.status(200).json({
             message: "Phone number verified successfully",
             user: {
@@ -60,6 +72,7 @@ const verifyCode = async (req, res) => {
                 username: user.username,
                 phone: user.phone,
             },
+            token,
         });
     }
     catch (err) {
