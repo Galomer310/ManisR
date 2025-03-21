@@ -24,7 +24,9 @@ const GiverMealCardApproval: React.FC = () => {
     }
     const fetchFoodItem = async () => {
       try {
-        const res = await fetch(`/food/${stateFoodItemId}`);
+        const API_BASE_URL =
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+        const res = await fetch(`${API_BASE_URL}/food/${stateFoodItemId}`);
         if (!res.ok) {
           const data = await res.json();
           setError(data.error || "Error fetching food item");
